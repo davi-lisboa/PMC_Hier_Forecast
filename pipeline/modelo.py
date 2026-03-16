@@ -57,28 +57,30 @@ from sktime.performance_metrics.forecasting import MeanAbsoluteError, MeanAbsolu
 
 # %%
 
-arima = StatsForecastAutoARIMA(sp=12),
-ets = StatsForecastAutoETS(season_length=12),
-ces = StatsForecastAutoCES(season_length=12),
+arima = StatsForecastAutoARIMA(sp=12)
+ets = StatsForecastAutoETS(season_length=12)
+ces = StatsForecastAutoCES(season_length=12)
 tbats = StatsForecastAutoTBATS(seasonal_periods=12)
 lgbm  = LGBMRegressor(verbosity=-1)
-catboost = CatBoostRegressor()
+# catboost = CatBoostRegressor()
 
 pipe = TransformedTargetForecaster(steps=[
-    ('deseason', OptionalPassthrough(Deseasonalizer(sp=12))),
-    ('detrend', OptionalPassthrough(Detrender())),
+    ('deseason', OptionalPassthrough(Deseasonalizer(sp=12), True)),
+    # ('detrend', OptionalPassthrough(Detrender())),
+    
     ('forecaster', AutoEnsembleForecaster(
         forecasters = [ arima, ets, ces, tbats], 
         regressor = lgbm
-    )),
+                                        )
+    ),
     ('reconciler', OptimalReconciler())
 
 ])
 
 param_grid = {
-    'deseason_passthrough': CatBoostRegressor((True, False)),
+    'deseason__passthrough': CategoricalDistribution((True, False)),
     'deseason__transformer__model': CategoricalDistribution(('additive', 'multiplicative')),
-    'forecaster__regressor': CategoricalDistribution((lgbm, catboost)),
+    # 'forecaster__regressor': CategoricalDistribution((lgbm, catboost)),
     'reconciler': CategoricalDistribution((BottomUpReconciler(), TopdownReconciler(), OptimalReconciler()))
 }
 
@@ -86,15 +88,21 @@ param_grid = {
 cv = ExpandingWindowSplitter(fh=range(1, 24+1), initial_window=120, step_length=1)
 cv = TemporalTrainTestSplitter(test_size=24)
 
+mae = MeanAbsoluteError()
+
 opcv = ForecastingOptunaSearchCV(
     forecaster=pipe,
     cv=cv,
     param_grid=param_grid,
-    scoring=MeanAbsoluteError(),
+    scoring=mae,
     n_evals=10,
+    error_score='raise'
 
 )
 
 import joblib
 pmc_agg = joblib.load(r'../data/pmc_agg.joblib')
-opcv.fit(pmc_agg)
+# opcv.fit(pmc_agg.dropna())
+
+pipe.fit(pmc_agg.dropna())
+pipe.predict(fh=range(1, 25))
