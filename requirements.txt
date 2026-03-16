@@ -1,0 +1,34 @@
+# =====================
+# Manipulação de dados
+# =====================
+pandas<3.0
+numpy
+
+# ==================
+# Controle de fluxo
+# ==================
+tenacity
+
+# ================
+# Coleta de dados
+# ================
+sidrapy
+
+# ===============
+# Gráficos
+# ===============
+matplotlib
+seaborn
+
+# =====================
+# Modelos | Algoritmos
+# =====================
+sktime
+statsforecast
+lightgbm
+catboost
+
+# ===============
+# Otimização
+# ===============
+optuna
