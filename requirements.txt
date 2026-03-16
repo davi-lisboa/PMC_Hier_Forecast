@@ -32,3 +32,8 @@ catboost
 # Otimização
 # ===============
 optuna
+
+# ======================
+# Diversos
+# ======================
+ipykernel
