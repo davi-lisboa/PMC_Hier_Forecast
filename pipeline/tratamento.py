@@ -174,3 +174,51 @@ def order_levels(
     # Retorna estrutura consolidada ao nível de "Grupo"
     return temp
 
+# %% transform_to_yoy
+
+def transform_to_yoy(hier_df, tipo, col_name='indice_pond') -> pd.DataFrame:
+  """Aplica a transformação Ano a Ano (YoY) na série histórica respeitando a hierarquia."""
+
+  if tipo.contains('sem_aberturas'):
+    yoy_df = (
+                hier_df.groupby(level=['Atividades'])[[col_name]]
+                .pct_change(12).multiply(100)
+              )
+
+  else:
+    raise NotImplementedError
+  
+  return yoy_df
+    
+
+# %% prettify_name
+
+def prettify_name(hier_df, tipo, name:bool):
+  
+  temp = hier_df.copy()
+    
+  if not tipo.contains('sem_aberturas'):
+     raise NotImplementedError
+  
+  else:
+    temp = temp.reset_index()
+    temp[['Atividades']] = temp[['Atividades']].map(lambda x: '0. PMC Total' if x == '__total' else x)
+    temp = temp.set_index(['Atividadaes', 'Data'])
+    temp = temp.sort_index()
+
+  return temp
+
+
+def prettify_date(hier_df, tipo):
+   
+   temp = hier_df.copy()
+
+   if not tipo.contains('sem_aberturas'):
+      raise NotImplementedError
+   
+   else:
+    temp = temp.reset_index()
+    temp[['Data_fmt']] = temp[['Data']].map(lambda date: date.strftime('b%y'))
+    temp = temp.set_index(['Atividadaes', 'Data', 'Data_fmt'])
+    # temp = temp.sort_index(by)
+      

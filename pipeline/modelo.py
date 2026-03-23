@@ -47,7 +47,7 @@ from sktime.transformations.compose import OptionalPassthrough
 # ==================
 from sktime.split import TemporalTrainTestSplitter, ExpandingWindowSplitter, SlidingWindowSplitter
 from sktime.forecasting.model_evaluation import evaluate
-from sktime.forecasting.model_selection import ForecastingOptunaSearchCV, ForecastingRandomizedSearchCV
+from sktime.forecasting.model_selection import ForecastingOptunaSearchCV, ForecastingRandomizedSearchCV, ForecastingGridSearchCV
 from optuna.distributions import CategoricalDistribution, FloatDistribution, IntDistribution
 
 # ===========
@@ -65,7 +65,7 @@ lgbm  = LGBMRegressor(verbosity=-1)
 # catboost = CatBoostRegressor()
 
 pipe = TransformedTargetForecaster(steps=[
-    ('deseason', OptionalPassthrough(Deseasonalizer(sp=12), True)),
+    # ('deseason', OptionalPassthrough(Deseasonalizer(sp=12), True)),
     # ('detrend', OptionalPassthrough(Detrender())),
     
     ('forecaster', AutoEnsembleForecaster(
@@ -77,9 +77,16 @@ pipe = TransformedTargetForecaster(steps=[
 
 ])
 
+# %% 
+
+import joblib
+pmc_agg = joblib.load(r'../data/pmc_agg.joblib')
+
+# %% 
+
 param_grid = {
-    'deseason__passthrough': CategoricalDistribution((True, False)),
-    'deseason__transformer__model': CategoricalDistribution(('additive', 'multiplicative')),
+    # 'deseason__passthrough': CategoricalDistribution((True, False)),
+    # 'deseason__transformer__model': CategoricalDistribution(('additive', 'multiplicative')),
     # 'forecaster__regressor': CategoricalDistribution((lgbm, catboost)),
     'reconciler': CategoricalDistribution((BottomUpReconciler(), TopdownReconciler(), OptimalReconciler()))
 }
@@ -100,9 +107,32 @@ opcv = ForecastingOptunaSearchCV(
 
 )
 
-import joblib
-pmc_agg = joblib.load(r'../data/pmc_agg.joblib')
-# opcv.fit(pmc_agg.dropna())
+opcv.fit(pmc_agg.dropna(), fh=range(1, 24+1))
+opcv
 
-pipe.fit(pmc_agg.dropna())
-pipe.predict(fh=range(1, 25))
+# %% 
+
+cv = ExpandingWindowSplitter(fh=range(1, 24+1), initial_window=120, step_length=1)
+# cv = TemporalTrainTestSplitter(test_size=24)
+
+mae = MeanAbsoluteError()
+
+param_grid = {
+    # 'deseason__passthrough': CategoricalDistribution((True, False)),
+    # 'deseason__transformer__model': CategoricalDistribution(('additive', 'multiplicative')),
+    # 'forecaster__regressor': CategoricalDistribution((lgbm, catboost)),
+    'reconciler': [BottomUpReconciler(), TopdownReconciler(), OptimalReconciler()]
+}
+gscv = ForecastingGridSearchCV(
+    forecaster=pipe,
+    cv=cv,
+    param_grid=param_grid,
+    scoring=mae,
+)
+
+gscv.fit(pmc_agg, )
+gscv
+
+
+# pipe.fit(pmc_agg.dropna())
+# pipe.predict(fh=range(1, 25))

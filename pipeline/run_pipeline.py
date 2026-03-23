@@ -1,4 +1,7 @@
 # %% Bibliotecas base
+import os
+import sys
+import logging
 
 import pandas as pd
 import numpy as np
@@ -21,6 +24,47 @@ pmc_agg = pmc_raw \
     .assign(indice_pond = lambda df: df['nindice'] * df['Pesos']/100) \
     .groupby(['Atividades', 'Data'])[['indice_pond']].last() \
     .pipe( Aggregator().fit_transform )
+
+
+new_last_date = pmc_agg.index.get_level_values("Data").unique().max()
+
+# %%
+
+bundle = load_bundle()
+
+old_modelo = bundle['modelo']
+old_hist = bundle['hist']
+old_preds = bundle['pred']
+old_full_data = pd.concat([old_hist, old_preds]).sort_index()
+old_last_date = bundle['last_date']
+
+# %% 
+
+there_is_new_data = new_last_date > old_last_date
+
+if there_is_new_data:
+    
+    new_hist = pmc_agg.copy()
+    new_modelo = old_modelo.fit(pmc_agg)
+    new_preds = new_modelo.predict(fh=range(1, 25))
+    new_full_data = pd.concat([new_hist, new_preds]).sort_index()
+
+    save_bundle(
+                modelo = new_modelo,
+                hist = new_hist,
+                preds = new_preds,
+                last_date = new_last_date
+              )
+
+else:
+  # logging
+  print("Sem atualizações de dados. Encerrando.")
+  sys.exit()
+
+
+
+
+
 
 
 # %%
