@@ -7,6 +7,10 @@ import pandas as pd
 import numpy as np
 
 from coleta import get_pmc_index, get_pmc_pesos
+from modelo import load_bundle, save_bundle
+from tratamento import prettify_name, prettify_date, transform_to_yoy
+from reports import compare_forecasts, forecast_error
+
 from sktime.transformations.hierarchical.aggregate import Aggregator
 
 # %%
@@ -44,22 +48,28 @@ there_is_new_data = new_last_date > old_last_date
 
 if there_is_new_data:
     
-    new_hist = pmc_agg.copy()
-    new_modelo = old_modelo.fit(pmc_agg)
-    new_preds = new_modelo.predict(fh=range(1, 25))
-    new_full_data = pd.concat([new_hist, new_preds]).sort_index()
+  new_hist = pmc_agg.copy()
+  new_modelo = old_modelo.fit(pmc_agg)
+  new_preds = new_modelo.predict(fh=range(1, 25))
+  new_full_data = pd.concat([new_hist, new_preds]).sort_index()
 
-    save_bundle(
+  save_bundle(
                 modelo = new_modelo,
                 hist = new_hist,
                 preds = new_preds,
                 last_date = new_last_date
               )
 
+  Reports
+  recast_error(pmc_agg, old_full_data, new_full_data)  
+  
+
+  
+
 else:
   # logging
   print("Sem atualizações de dados. Encerrando.")
-  sys.exit()
+  sys.exit(0)
 
 
 

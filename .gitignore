@@ -3,3 +3,7 @@ settings.json
 __pycache__/
 
 pipeline/__pycache__
+
+.vscode/
+
+.agents/

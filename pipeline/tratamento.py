@@ -191,7 +191,8 @@ def transform_to_yoy(hier_df, tipo, col_name='indice_pond') -> pd.DataFrame:
   return yoy_df
     
 
-# %% prettify_name
+# %% 
+# prettify_name
 
 def prettify_name(hier_df, tipo, name:bool):
   
@@ -208,17 +209,26 @@ def prettify_name(hier_df, tipo, name:bool):
 
   return temp
 
+# %%
+# prettify_date
 
 def prettify_date(hier_df, tipo):
    
-   temp = hier_df.copy()
+  temp = hier_df.copy()
 
-   if not tipo.contains('sem_aberturas'):
-      raise NotImplementedError
-   
-   else:
+  if not tipo.contains('sem_aberturas'):
+    raise NotImplementedError
+  
+  else:
     temp = temp.reset_index()
     temp[['Data_fmt']] = temp[['Data']].map(lambda date: date.strftime('b%y'))
     temp = temp.set_index(['Atividadaes', 'Data', 'Data_fmt'])
     # temp = temp.sort_index(by)
-      
+
+  return temp
+
+
+# %%
+
+if __name__ == '__main__':
+    pass   
