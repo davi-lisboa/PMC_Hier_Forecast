@@ -34,11 +34,11 @@ new_last_date = pmc_agg.index.get_level_values("Data").unique().max()
 
 # %%
 
-bundle = load_bundle()
+bundle = load_bundle(r'../data/pmc_model_bundle.joblib')
 
-old_modelo = bundle['modelo']
+old_modelo = bundle['model']
 old_hist = bundle['hist']
-old_preds = bundle['pred']
+old_preds = bundle['last_preds']
 old_full_data = pd.concat([old_hist, old_preds]).sort_index()
 old_last_date = bundle['last_date']
 
@@ -60,8 +60,17 @@ if there_is_new_data:
                 last_date = new_last_date
               )
 
-  Reports
-  recast_error(pmc_agg, old_full_data, new_full_data)  
+  # %% Reports
+  
+  forecast_error(
+    new_data = transform_to_yoy(pmc_agg, 'restrita_sem_aberturas'),
+    old_fc = transform_to_yoy(old_full_data, 'restrita_sem_aberturas')
+    )  
+  
+  # compare_forecasts(
+  #   old_fc = transform_to_yoy(old_full_data.query('Data == @new_last_date'), 'restrita_sem_aberturas'),
+  #   new_fc = transform_to_yoy(pmc_agg, 'restrita_sem_aberturas'),
+  #   )
   
 
   
@@ -252,4 +261,8 @@ order_levels(
     date_col='Data',
     keep_cols=['nindice']
 ).query('Atividades.str.startswith("2")')
+
 # %%
+
+if __name__ == '__main__':
+    pass

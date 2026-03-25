@@ -1,4 +1,6 @@
-# %% Bibliotecas base
+# %% 
+# Bibliotecas base
+
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -8,7 +10,8 @@ import joblib
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-v0_8-darkgrid')
 
-# %% Módulos skitme
+# %% 
+# Módulos skitme
 
 # ==========
 #  Pipeline
@@ -91,36 +94,38 @@ def load_bundle(bundle_path: str):
     import joblib
     try:
         bundle = joblib.load(bundle_path)
-        pipe = bundle['model']
-        last_date = bundle['meta']['last_date']
-        last_preds = bundle.get('last_preds', None)
-        hist = bundle.get('hist', None)
-        
-        if hist is not None and last_preds is not None:
-            previous_full_df = pd.concat([hist, last_preds]).sort_index()
-        else:
-            previous_full_df = None
+        bundle_dict = dict(
+            model = bundle['model'],
+            last_date = bundle['last_date'],
+            last_preds = bundle.get('last_preds', None),
+            hist = bundle.get('hist', None)
+        )
+
+        # if hist is not None and last_preds is not None:
+        #     previous_full_df = pd.concat([hist, last_preds]).sort_index()
+        # else:
+        #     previous_full_df = None
             
-        return bundle, pipe, last_date, last_preds, previous_full_df
+        return bundle_dict #bundle, model, last_date, last_preds, previous_full_df
     except FileNotFoundError:
         print("Modelo nao encontrado. Este sera um treinamento do zero.")
-        return None, None, None, None, None
+        return None #, None, None, None, None
 
-def save_bundle(pipe, fh, preds, pms_agg, bundle_path: str):
+def save_bundle(model, preds, hist, bundle_path: str):
     """
     Salva o estado completo do pipeline hierarquico e preve para a proxima iteracao.
     """
     import joblib
     new_bundle = dict(
-        model = pipe,
-        fh = fh,
-        last_date = pipe.cutoff[0],
+        model = model,
+        # fh = fh,
+        last_date = model.cutoff[0],
         last_preds=preds,
-        hist = pms_agg
+        hist = hist
                     )
     joblib.dump(new_bundle, bundle_path)
 
 
 # %%
 if __name__ == '__main__':
-    main()
+    pass
