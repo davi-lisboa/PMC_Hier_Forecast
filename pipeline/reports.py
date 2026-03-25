@@ -37,10 +37,10 @@ def forecast_error(new_data, old_fc, save_path: str | None = None):
 
     error_df = pd.concat([new_data, filtered_fc], axis=1)
     error_df.columns = ['Realizado', 'Previsto']
-    error_df['Erro'] = error_df['Previsto'] - error_df['Realizado']
-    error_df['Erro (%)'] = (error_df['Erro'] / error_df['Previsto']) * 100
+    error_df['Erro Abs.'] = np.abs( error_df['Previsto'] - error_df['Realizado'] )
+    error_df['Erro Abs. (%)'] = (error_df['Erro Abs.'] / error_df['Realizado']) * 100
 
-    error_df = error_df.query("Erro != 0.000000 and Erro.isna() == False")
+    error_df = error_df.query("`Erro Abs.` != 0.000000 and `Erro Abs.`.isna() == False")
 
     if save_path is not None:
         if os.path.exists(save_path):

@@ -32,7 +32,8 @@ pmc_agg = pmc_raw \
 
 new_last_date = pmc_agg.index.get_level_values("Data").unique().max()
 
-# %%
+# %% 
+# Load old data & model
 
 bundle = load_bundle(r'../data/pmc_model_bundle.joblib')
 
@@ -53,14 +54,15 @@ if there_is_new_data:
   new_preds = new_modelo.predict(fh=range(1, 25))
   new_full_data = pd.concat([new_hist, new_preds]).sort_index()
 
-  save_bundle(
-                modelo = new_modelo,
-                hist = new_hist,
-                preds = new_preds,
-                last_date = new_last_date
-              )
+  # save_bundle(
+  #               modelo = new_modelo,
+  #               hist = new_hist,
+  #               preds = new_preds,
+  #               last_date = new_last_date
+  #             )
 
-  # %% Reports
+  # %% 
+  # Reports
   
   forecast_error(
     new_data = transform_to_yoy(pmc_agg, 'restrita_sem_aberturas'),
@@ -74,6 +76,8 @@ if there_is_new_data:
   
 
   
+# %% 
+# Exit
 
 else:
   # logging
