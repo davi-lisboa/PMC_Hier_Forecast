@@ -5,6 +5,22 @@ import os
 import pandas as pd
 import numpy as np
 
+from sktime.transformations.hierarchical.aggregate import Aggregator
+
+# %% aggregate_pmc
+
+def aggregate_pmc(pmc_raw: pd.DataFrame, pesos_raw: pd.DataFrame) -> pd.DataFrame:
+    """Realiza a ponderação e agregação do dataframe bruto da PMC."""
+    pmc_agg = (
+        pmc_raw
+        .reset_index()
+        .merge(pesos_raw, on='Atividades', how='left')
+        .assign(indice_pond = lambda df: df['nindice'] * df['Pesos']/100)
+        .groupby(['Atividades', 'Data'])[['indice_pond']].last()
+        .pipe(Aggregator().fit_transform)
+    )
+    return pmc_agg
+
 # %% order_levels
 
 def order_levels(
@@ -229,6 +245,23 @@ def prettify_date(hier_df, tipo):
     # temp = temp.sort_index(by)
 
   return temp
+
+def date_to_period(df, date_col: str, multiindex: bool = True):
+    df_fmt = (
+            df
+            .reset_index()
+            .assign(
+                    Data = lambda df: pd.PeriodIndex.from_fields(
+                                                                month=df[date_col].dt.month, 
+                                                                year=df[date_col].dt.year, 
+                                                                freq='M'
+                                                                )
+
+                    )
+            .set_index(list(df.index.names))
+        )
+
+    return df_fmt
 
 
 # %%

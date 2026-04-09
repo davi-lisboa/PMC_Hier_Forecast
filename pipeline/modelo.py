@@ -65,22 +65,22 @@ from sktime.performance_metrics.forecasting import MeanAbsoluteError, MeanAbsolu
 def create_model():
 
     arima = StatsForecastAutoARIMA(sp=12)
-    ets = StatsForecastAutoETS(season_length=12)
-    ces = StatsForecastAutoCES(season_length=12)
     tbats = StatsForecastAutoTBATS(seasonal_periods=12)
-    lgbm  = LGBMRegressor(verbosity=-1)
-    # catboost = CatBoostRegressor()
+    ets =  StatsForecastAutoETS(season_length=12)
+    ces = StatsForecastAutoCES(season_length=12)
+    # snaive = NaiveForecaster(sp=12)
+    lgbm = LGBMRegressor(verbosity=-1)
+    ensemble = AutoEnsembleForecaster(forecasters=[arima, tbats, ets, ces], regressor=lgbm)
 
     pipe = TransformedTargetForecaster(steps=[
-        # ('deseason', OptionalPassthrough(Deseasonalizer(sp=12), True)),
-        # ('detrend', OptionalPassthrough(Detrender())),
-        
-        ('forecaster', AutoEnsembleForecaster(
-            forecasters = [ arima, ets, ces, tbats ], 
-            regressor = lgbm )),
+
+        ('log', BoxCoxTransformer()), # Estabiliza variância
+        ('deseason', Deseasonalizer(sp=12)), # Remove sazonalidade
+        ('diff', Differencer()), # Remove tendência
+        ('forecaster', ensemble),
         ('reconciler', OptimalReconciler())
 
-    ])
+            ])
 
     return pipe
 
@@ -118,12 +118,44 @@ def save_bundle(model, preds, hist, bundle_path: str):
     import joblib
     new_bundle = dict(
         model = model,
-        # fh = fh,
+        hist = hist,
+        preds=preds,
         last_date = model.cutoff[0],
-        last_preds=preds,
-        hist = hist
                     )
     joblib.dump(new_bundle, bundle_path)
+
+
+
+def metrics(y_true, y_pred, y_train):
+    import pandas as pd
+    from sktime.performance_metrics.forecasting import (
+                                                    MeanAbsoluteError, MeanAbsoluteScaledError,
+                                                    MeanAbsolutePercentageError, MeanSquaredError
+                                                    )
+
+    mae_overall = MeanAbsoluteError()
+    mae_raw = MeanAbsoluteError(multilevel='raw_values')
+
+    rmse_raw = MeanSquaredError(square_root=True, multilevel='raw_values')
+
+    mape_overall = MeanAbsolutePercentageError(symmetric=False)
+    mape_raw = MeanAbsolutePercentageError(symmetric=False, multilevel='raw_values')
+
+    smape_overall = MeanAbsolutePercentageError(symmetric=True)
+    smape_raw = MeanAbsolutePercentageError(symmetric=True, multilevel='raw_values')
+
+    mase_raw = MeanAbsoluteScaledError(sp=12, multilevel='raw_values')
+
+    mae = mae_raw(y_true=y_true, y_pred=y_pred)
+    rmse = rmse_raw(y_true=y_true, y_pred=y_pred)
+    mape = mape_raw(y_true=y_true, y_pred=y_pred).multiply(100).round(2)
+    smape = smape_raw(y_true=y_true, y_pred=y_pred).multiply(100).round(2)
+    mase = mase_raw(y_true=y_true, y_pred=y_pred, y_train=y_train)
+
+    metrics_df = pd.concat([mae, rmse, mape, smape, mase], axis=1)
+    metrics_df.columns = ['MAE', 'RMSE', 'MAPE', 'sMAPE', 'MASE']
+
+    return metrics_df
 
 
 # %%
