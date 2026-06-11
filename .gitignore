@@ -7,3 +7,5 @@ pipeline/__pycache__
 .vscode/
 
 .agents/
+
+data/
