@@ -4,6 +4,7 @@
 import os
 import sys
 import logging
+import datetime as dt
 
 import pandas as pd
 import numpy as np
@@ -18,6 +19,8 @@ warnings.filterwarnings('ignore', category=UserWarning)
 
 # %% 
 # Setup
+
+HOJE = dt.date.today()
 
 TYPE = 'restrita_sem_aberturas'
 BUNDLE_PATH = r'../data/pmc_model_bundle.joblib'
@@ -49,6 +52,8 @@ old_preds = bundle['last_preds']
 old_full_data = pd.concat([old_hist, old_preds]).sort_index()
 old_last_date = bundle['last_date']
 
+print(f"Último dado: {old_last_date.strftime('%b/%Y')}")
+
 # %% 
 
 there_is_new_data = new_last_date > old_last_date
@@ -60,25 +65,28 @@ if there_is_new_data:
   new_preds = new_modelo.predict(fh=FORECAST_HORIZON)
   new_full_data = pd.concat([new_hist, new_preds]).sort_index()
 
-  # save_bundle(
-  #               modelo = new_modelo,
-  #               hist = new_hist,
-  #               preds = new_preds,
-  #               last_date = new_last_date
-  #             )
+  save_bundle(
+                modelo = new_modelo,
+                hist = new_hist,
+                preds = new_preds,
+                last_date = new_last_date
+              )
 
-  # %% 
-  # Reports
+  # %% ## Reports
+  
   
   forecast_error(
-    new_data = transform_to_yoy(pmc_agg, TYPE),
-    old_fc = transform_to_yoy(old_full_data, TYPE)
-    ).round(1)  
+    new_data = prettify_name(transform_to_yoy(pmc_agg, TYPE), TYPE).query("Data > @old_last_date"),
+    old_fc = prettify_name(transform_to_yoy(old_full_data, TYPE), TYPE).query("Data > @old_last_date"),
+    save_path = r'../reports/forecast_error.xlsx'
+  ).round(1)
   
-  # compare_forecasts(
-  #   old_fc = transform_to_yoy(old_full_data.query('Data == @new_last_date'), 'restrita_sem_aberturas'),
-  #   new_fc = transform_to_yoy(pmc_agg, 'restrita_sem_aberturas'),
-  #   )
+  
+  compare_forecasts(
+    old_fc = prettify_name(transform_to_yoy(old_full_data, TYPE), TYPE).query('Data > @new_last_date'),
+    new_fc = prettify_name(transform_to_yoy(new_full_data, TYPE), TYPE).query('Data > @new_last_date'),
+    save_path = r'../reports/forecast_comparison.xlsx'
+    ).round(1)
   
 
   

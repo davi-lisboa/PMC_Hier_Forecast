@@ -211,7 +211,7 @@ def transform_to_yoy(hier_df, tipo, col_name='indice_pond') -> pd.DataFrame:
 # %% 
 # prettify_name
 
-def prettify_name(hier_df, tipo, name:bool):
+def prettify_name(hier_df, tipo):
   
   temp = hier_df.copy()
     
